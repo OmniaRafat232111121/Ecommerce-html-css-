@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<!-- saved from url=(0071)https://my.asos.com/identity/resource/checklogin?path=1&n=1551704232152 -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Check Login IFrame</title>
+<script nonce="">bazadebezolkohpepadr="1253061895"</script><script type="text/javascript" src="./4ab036d0" nonce="" defer=""></script></head>
+<body>
+    <input id="cookie-name-anon" type="hidden" value="asos-anon12">
+    <input id="cookie-name-lp" type="hidden" value="asos-lp746">
+    <input id="cookie-browserSession-ts" type="hidden" value="asos-ts121">
+    <input id="validOrigins" type="hidden" value="www.asos.com,secure.asos.com,us.asos.com,www.asos.fr,www.asos.de,my.asos.com,m.asos.com,api.asos.com">
+    <script src="./app.crypto.min.js.download"></script>
+    <script type="text/javascript">
+        !function(){Date.now||(Date.now=function(){return(new Date).getTime()}),"console"in window||(window.console=window.console||function(){var r={};return r.log=r.warn=r.debug=r.info=r.error=r.time=r.dir=r.profile=r.clear=r.exception=r.trace=r.assert=function(r){},r}()),"function"!=typeof Array.prototype.forEach&&(Array.prototype.forEach=function(r){for(var t=0;t<this.length;t++)r.apply(this,[this[t],t,this])}),"function"!=typeof Array.prototype.filter&&(Array.prototype.filter=function(r){"use strict";if(void 0===this||null===this)throw new TypeError;var t=Object(this),n=t.length>>>0;if("function"!=typeof r)throw new TypeError;for(var o=[],e=arguments[1],i=0;n>i;i++)if(i in t){var a=t[i];r.call(e,a,i,t)&&o.push(a)}return o}),"function"!=typeof String.prototype.trim&&(String.prototype.trim=function(){return this.replace(/^\s+|\s+$/g,"")}),Array.prototype.map||(Array.prototype.map=function(r,t){var n,o,e;if(null==this)throw new TypeError(" this is null or not defined");var i=Object(this),a=i.length>>>0;if("function"!=typeof r)throw new TypeError(r+" is not a function");for(arguments.length>1&&(n=t),o=new Array(a),e=0;a>e;){var f,p;e in i&&(f=i[e],p=r.call(n,f,e,i),o[e]=p),e++}return o}),Array.prototype.indexOf||(Array.prototype.indexOf=function(r,t){var n;if(null==this)throw new TypeError('"this" is null or not defined');var o=Object(this),e=o.length>>>0;if(0===e)return-1;var i=+t||0;if(Math.abs(i)===1/0&&(i=0),i>=e)return-1;for(n=Math.max(i>=0?i:e-Math.abs(i),0);e>n;){if(n in o&&o[n]===r)return n;n++}return-1})}();
+
+function extractDomain(url) {
+    var domain;
+    //find & remove protocol (http, ftp, etc.) and get domain
+    if (url.indexOf("://") > -1) {
+        domain = url.split('/')[2];
+    }
+    else {
+        domain = url.split('/')[0];
+    }
+
+    //find & remove port number
+    domain = domain.split(':')[0];
+
+    return domain;
+};
+
+function extractMessage(message) {
+    var domain = extractDomain(message.origin);
+    var origins = validOrigins.split(",");
+    // valid origin
+    if (!(origins.indexOf(domain) >= 0)) {
+        console.log(message.origin + " is not valid");
+        return undefined;
+    }
+    // valid date
+    if (!message.data) {
+        console.error("No data provided");
+        return undefined;
+    }
+
+    var data;
+    try {
+        data = JSON.parse(message.data);
+    } catch (e) {
+        return undefined;
+    } 
+        
+    // valid signiture
+    if (!data.sig) {
+        console.log("Message is not recognised");
+        return undefined;
+    }
+
+    return {
+        source: message.source,
+        origin: message.origin,
+        data: data.data,
+        signiture: data.sig
+    };
+};
+
+
+var validOrigins = document.getElementById("validOrigins").value.trim();
+
+
+        function getCookies() {
+            var allCookies = document.cookie;
+            var cookies = allCookies.split(';');
+            return cookies.map(function (value) {
+                var parts = value.trim().split('=');
+                if (parts.length === 2) {
+                    return {
+                        name: parts[0].trim(),
+                        value: parts[1].trim()
+                    };
+                }
+            }).filter(function (item) {
+                return item && item.name && item.value;
+            });
+        }
+
+        function getBrowserSessionId() {
+            var cookies = getCookies().filter(function (cookie) {
+                return (cookie.name === "idsvr.session");
+            });
+            return cookies[0] && cookies[0].value;
+        }
+
+        function hash(value) {
+            var hash = KJUR.crypto.Util.sha256(value);
+            return hextob64u(hash);
+        }
+
+        function computeSessionStateHash(clientId, origin, sessionId, salt) {
+            return hash(clientId + origin + sessionId + salt);
+        }
+
+        function getAnonCookie() {
+            var cookies = getCookies().filter(function (cookie) {
+                return (cookie.name === anonCookieName);
+            });
+            if (cookies[0]) {
+                return cookies[0].value;
+            }
+        }
+
+        function getAsosLpCookie() {
+            var cookies = getCookies().filter(function (cookie) {
+                return (cookie.name === asosLpName);
+            });
+            if (cookies[0]) {
+                return cookies[0].value;
+            }
+        }
+
+        function getAsosTsCookie() {
+            var cookies = getCookies().filter(function (cookie) {
+                return (cookie.name === asosTsValue);
+            });
+            if (cookies[0]) {
+                return cookies[0].value;
+            } else {
+                return "";
+            }
+        }
+
+        function checkLoginState(origin, message) {
+            try {
+                if (!origin || !message || !message.client_id) { return; }
+
+                var anon = getAnonCookie(),
+                    sid = getBrowserSessionId(),
+                    sessionState = message.session_state,
+                    asosTsCookie = getAsosTsCookie(),
+                    state,
+                    data;
+                var asoslp = getAsosLpCookie();
+
+                if (anon) {
+                    state = "anonymous";
+                    data = anon;
+                }
+                else {
+                    if (!sid) {
+                        /*
+                            passing up withCredential now passes session id with request.
+                            Therefore never entering the outer if,
+                            thus making it impossible to enter recognises state.
+
+                            Calls to the token exchange endpoint are changing the value
+                            of xsrv.session
+                        */
+                        if (asoslp) {
+                            state = "recognised";
+                        }
+                        else { // neither anonymously nor customer authenticated, a brand new browser
+                            state = "unauthenticated";
+                        }
+                    }
+                    else {
+                        if (sessionState) {
+                            var sessionStateParts = sessionState.split('.');
+                            var clientHash = sessionStateParts[0];
+                            var salt = sessionStateParts[1];
+                            var expectedHash = computeSessionStateHash(message.client_id, origin, sid, salt);
+
+                            state = clientHash === expectedHash ? "unchanged" : "changed";
+                        } else {
+                            // client has anonymous token but server is authenticated
+                            state = "changed";
+                        }
+                    }
+                }
+
+                return JSON.stringify({
+                    state: state,
+                    data: data,
+                    asosTsCookie: asosTsCookie
+                });
+
+            } catch (e) {
+                return;
+            }
+        }
+
+        var anonCookieName = document.getElementById("cookie-name-anon").value.trim();
+        var asosLpName = document.getElementById("cookie-name-lp").value.trim();
+        var asosTsValue = document.getElementById("cookie-browserSession-ts").value.trim();
+
+
+        if (window.parent !== window) {
+            var onMessageCallback = function (el) {
+                try {
+                    var e = extractMessage(el);
+                    if (!e) {
+                        return;
+                    }
+
+                    var data = e.data ? JSON.parse(e.data) : undefined;
+                    var result = checkLoginState(e.origin, data);
+                    if (result) {
+                        var msg = JSON.stringify({ sig: e.signiture, data: result });
+                        e.source.postMessage(msg, e.origin);
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+            if (window.addEventListener) {
+                window.addEventListener("message", onMessageCallback, false);
+            } else {
+                window.attachEvent("onmessage", onMessageCallback);
+            }
+        }
+
+    </script>
+<noscript><img src="https://my.asos.com/akam/13/pixel_4ab036d0?a=dD00ODA3NTY2NjRiNGMxZWUzZTkzNTQxOGNmYjE1YmQxNDZmMGZjMmQyJmpzPW9mZg==" style="visibility: hidden; position: absolute; left: -999px; top: -999px;" /></noscript><script type="text/javascript" nonce="" src="./tMBwkuTg"></script>
+</body></html>
